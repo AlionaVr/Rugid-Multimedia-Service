@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option java_package = "com.rugid.account";
+option java_multiple_files = true;
+
+message ImageDeleteRequest {
+  string imageId = 1;
+}
+
+message ImageDeleteResponse {}
+
+service MultimediaService {
+  rpc delete(ImageDeleteRequest) returns (ImageDeleteResponse);
+}
