@@ -3,8 +3,6 @@ package com.rugid.multimediaservice.adapter.in.rest.validator;
 import com.rugid.multimediaservice.adapter.in.exception.DtoNotValidException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,14 +25,6 @@ class JsonDtoValidatorTest {
     @InjectMocks
     private JsonDtoValidator<MockMultipartFile> jsonDtoValidator;
 
-    @BeforeEach
-    void setUp() {
-        jsonDtoValidator = new JsonDtoValidator<>(validator);
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
 
     @Test
     void testValidate_whenValidData_thenOk() {

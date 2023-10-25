@@ -2,13 +2,12 @@ package com.rugid.multimediaservice.adapter.out.persistence;
 
 import com.rugid.multimediaservice.domain.core.exception.IORuntimeException;
 import com.rugid.multimediaservice.domain.core.exception.NoSuchFileRuntimeException;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.CleanupMode;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 
 import java.io.File;
@@ -18,18 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 class SystemFileStorageAdapterTest {
-    private static final String storageFolderPath = "content";
-    @Autowired
+    @TempDir(cleanup = CleanupMode.ALWAYS)
+    private static File tempDir;
+    private final String storageFolderPath = tempDir.getPath();
+
     private SystemFileStorageAdapter fileStorageAdapter;
 
     @BeforeEach
     void setUp() throws IOException {
         fileStorageAdapter = new SystemFileStorageAdapter(storageFolderPath);
-    }
-
-    @AfterEach
-    void tearDown() throws IOException {
-        FileUtils.cleanDirectory(new File(storageFolderPath));
     }
 
     @Test

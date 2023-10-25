@@ -11,8 +11,6 @@ import com.rugid.multimediaservice.domain.port.in.DownloadFileUseCase;
 import com.rugid.multimediaservice.domain.port.in.GetDefaultFileUrlUseCase;
 import com.rugid.multimediaservice.domain.port.in.UploadFileUseCase;
 import org.apache.commons.io.FilenameUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -22,7 +20,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -36,8 +33,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest
-@SpringJUnitWebConfig(ImageEndpoint.class)
+@WebMvcTest(controllers = ImageEndpoint.class)
 class ImageEndpointTest {
     @Autowired
     private MockMvc mockMvc;
@@ -56,14 +52,6 @@ class ImageEndpointTest {
     private JsonDtoValidator<UploadImageRequest> uploadImageRequestValidator;
     @MockBean
     private JsonDtoValidator<DeleteImageRequest> deleteImageRequestValidator;
-
-    @BeforeEach
-    void setUp() {
-    }
-
-    @AfterEach
-    void tearDown() {
-    }
 
     @Test
     void testDownloadImage_whenValidData() throws Exception {
