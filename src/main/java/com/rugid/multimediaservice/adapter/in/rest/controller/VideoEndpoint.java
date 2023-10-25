@@ -45,7 +45,7 @@ public class VideoEndpoint {
     }
 
     @PutMapping(consumes = "multipart/form-data")
-    public ResponseEntity<UploadVideoResponse> uploadImage(@ModelAttribute UploadVideoRequest uploadVideoRequest) {
+    public ResponseEntity<UploadVideoResponse> uploadImage(@ModelAttribute("request") UploadVideoRequest uploadVideoRequest) {
         UploadFileUseCase.UploadFileCommand uploadFileCommand = createUploadImageCommand(uploadVideoRequest);
         String videoId = uploadFileUseCase.uploadImage(uploadFileCommand);
 

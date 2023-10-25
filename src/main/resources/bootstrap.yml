@@ -6,4 +6,7 @@ spring:
   cloud:
     config:
       uri: http://localhost:8880
-      fail-fast: true
+      fail-fast: false
+rugid:
+  images:
+   folder-path: "content"

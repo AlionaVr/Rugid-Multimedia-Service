@@ -68,7 +68,7 @@ public class ImageEndpoint {
     }
 
     @PutMapping(consumes = "multipart/form-data")
-    public ResponseEntity<UploadImageResponse> uploadImage(@ModelAttribute UploadImageRequest request) {
+    public ResponseEntity<UploadImageResponse> uploadImage(@ModelAttribute("request") UploadImageRequest request) {
         uploadImageRequestValidator.validate(request);
 
         UploadFileUseCase.UploadFileCommand uploadFileCommand = createUploadImageCommand(request);
