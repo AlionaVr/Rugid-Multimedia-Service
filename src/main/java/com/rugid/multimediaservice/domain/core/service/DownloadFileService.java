@@ -16,6 +16,6 @@ public class DownloadFileService implements DownloadFileUseCase {
 
     @Override
     public InputStreamResource download(String fileId) {
-        return fileOutputPort.download(fileId);
+        return null;
     }
 }

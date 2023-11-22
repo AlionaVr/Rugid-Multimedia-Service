@@ -5,7 +5,6 @@ import com.rugid.multimediaservice.adapter.in.rest.dto.RetrieveDefaultImageIdRes
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadImageRequest;
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadImageResponse;
 import com.rugid.multimediaservice.adapter.in.rest.validator.JsonDtoValidator;
-import com.rugid.multimediaservice.domain.core.exception.IORuntimeException;
 import com.rugid.multimediaservice.domain.port.in.DeleteFileUseCase;
 import com.rugid.multimediaservice.domain.port.in.DownloadFileUseCase;
 import com.rugid.multimediaservice.domain.port.in.GetDefaultFileUrlUseCase;
@@ -97,8 +96,8 @@ public class ImageEndpoint {
         byte[] imageAsBytes;
         try {
             imageAsBytes = image.getBytes();
-        } catch (IOException e) {
-            throw new IORuntimeException("Could not read image data", e);
+        } catch (Exception e) {
+            //TODO: нужно как-то обработать
         }
 
         String fileExtension = FilenameUtils.getExtension(image.getOriginalFilename());

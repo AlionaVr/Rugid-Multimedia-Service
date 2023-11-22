@@ -1,8 +1,6 @@
 package com.rugid.multimediaservice.adapter.in.exception.handler;
 
 import com.rugid.multimediaservice.adapter.in.exception.DtoNotValidException;
-import com.rugid.multimediaservice.domain.core.exception.IORuntimeException;
-import com.rugid.multimediaservice.domain.core.exception.NoSuchFileRuntimeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,15 +12,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IORuntimeException.class)
-    public ResponseEntity<?> handleException(IORuntimeException exception) {
-        return createResponse("IO exception", exception);
-    }
-
-    @ExceptionHandler(NoSuchFileRuntimeException.class)
-    public ResponseEntity<?> handleException(NoSuchFileRuntimeException exception) {
-        return createResponse("No such file exception", exception);
-    }
 
     @ExceptionHandler(DtoNotValidException.class)
     public ResponseEntity<?> handleException(DtoNotValidException exception) {

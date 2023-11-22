@@ -2,7 +2,6 @@ package com.rugid.multimediaservice.adapter.in.rest.controller;
 
 import com.rugid.multimediaservice.adapter.in.rest.dto.*;
 import com.rugid.multimediaservice.adapter.in.rest.validator.JsonDtoValidator;
-import com.rugid.multimediaservice.domain.core.exception.IORuntimeException;
 import com.rugid.multimediaservice.domain.port.in.DeleteFileUseCase;
 import com.rugid.multimediaservice.domain.port.in.GetDefaultFileUrlUseCase;
 import com.rugid.multimediaservice.domain.port.in.UploadFileUseCase;
@@ -72,8 +71,8 @@ public class VideoEndpoint {
         byte[] videoAsBytes;
         try {
             videoAsBytes = video.getBytes();
-        } catch (IOException e) {
-            throw new IORuntimeException("Could not read video data", e);
+        } catch (Exception e) {
+            //TODO: нужно как-то обработать
         }
 
         String fileExtension = FilenameUtils.getExtension(video.getOriginalFilename());

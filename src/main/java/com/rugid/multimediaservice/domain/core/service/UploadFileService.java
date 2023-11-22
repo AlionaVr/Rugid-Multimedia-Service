@@ -17,9 +17,6 @@ public class UploadFileService implements UploadFileUseCase {
 
     @Override
     public String uploadImage(UploadFileCommand uploadFileCommand) {
-        byte[] imageData = uploadFileCommand.imageData();
-        String imageExtension = uploadFileCommand.extension();
-
-        return fileOutputPort.upload(imageData, imageExtension);
+        return null;
     }
 }
