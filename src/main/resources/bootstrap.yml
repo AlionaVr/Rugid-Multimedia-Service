@@ -9,4 +9,5 @@ spring:
       fail-fast: false
 rugid:
   images:
-   folder-path: "content"
+    folder-path: "content"
+    max-file-size: 10485760  #10MB
