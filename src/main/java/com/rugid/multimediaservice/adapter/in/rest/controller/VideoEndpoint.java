@@ -1,17 +1,22 @@
 package com.rugid.multimediaservice.adapter.in.rest.controller;
 
-import com.rugid.multimediaservice.adapter.in.rest.dto.*;
+import com.rugid.multimediaservice.domain.core.exception.FileUploadReadException;
+import com.rugid.multimediaservice.adapter.in.rest.dto.DeleteVideoRequest;
+import com.rugid.multimediaservice.adapter.in.rest.dto.RetrieveDefaultVideoIdResponse;
+import com.rugid.multimediaservice.adapter.in.rest.dto.UploadVideoRequest;
+import com.rugid.multimediaservice.adapter.in.rest.dto.UploadVideoResponse;
 import com.rugid.multimediaservice.adapter.in.rest.validator.JsonDtoValidator;
-import com.rugid.multimediaservice.domain.port.in.DeleteFileUseCase;
-import com.rugid.multimediaservice.domain.port.in.GetDefaultFileUrlUseCase;
-import com.rugid.multimediaservice.domain.port.in.UploadFileUseCase;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
+import com.rugid.multimediaservice.domain.port.in.*;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/video")
@@ -20,18 +25,24 @@ public class VideoEndpoint {
     private final GetDefaultFileUrlUseCase getDefaultFileUrlUseCase;
     private final UploadFileUseCase uploadFileUseCase;
     private final DeleteFileUseCase deleteFileUseCase;
+    private final DownloadFileUseCase downloadFileUseCase;
     private final JsonDtoValidator<DeleteVideoRequest> deleteVideoRequestValidator;
+    private final JsonDtoValidator<UploadVideoRequest> uploadVideoRequestValidator;
 
     public VideoEndpoint(
             GetDefaultFileUrlUseCase getDefaultFileUrlUseCase,
             UploadFileUseCase uploadFileUseCase,
             DeleteFileUseCase deleteFileUseCase,
-            JsonDtoValidator<DeleteVideoRequest> deleteVideoRequestValidator
+            DownloadFileUseCase downloadFileUseCase,
+            JsonDtoValidator<DeleteVideoRequest> deleteVideoRequestValidator,
+            JsonDtoValidator<UploadVideoRequest> uploadVideoRequestValidator
     ) {
         this.getDefaultFileUrlUseCase = getDefaultFileUrlUseCase;
         this.uploadFileUseCase = uploadFileUseCase;
         this.deleteFileUseCase = deleteFileUseCase;
+        this.downloadFileUseCase = downloadFileUseCase;
         this.deleteVideoRequestValidator = deleteVideoRequestValidator;
+        this.uploadVideoRequestValidator = uploadVideoRequestValidator;
     }
 
     @GetMapping("/default")
@@ -43,10 +54,22 @@ public class VideoEndpoint {
                 .body(new RetrieveDefaultVideoIdResponse(defaultVideoId));
     }
 
-    @PutMapping(consumes = "multipart/form-data")
-    public ResponseEntity<UploadVideoResponse> uploadImage(@ModelAttribute("request") UploadVideoRequest uploadVideoRequest) {
-        UploadFileUseCase.UploadFileCommand uploadFileCommand = createUploadImageCommand(uploadVideoRequest);
-        String videoId = uploadFileUseCase.uploadImage(uploadFileCommand);
+    @GetMapping
+    public ResponseEntity<Resource> downloadVideo(@RequestParam(name = "videoId") String videoId) {
+        FileResource video = downloadFileUseCase.download(videoId, FileType.VIDEO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .contentType(MediaType.parseMediaType(video.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + videoId + "\"")
+                .body(video.resource());
+    }
+
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<UploadVideoResponse> uploadVideo(@ModelAttribute("request") UploadVideoRequest uploadVideoRequest) {
+        uploadVideoRequestValidator.validate(uploadVideoRequest);
+
+        UploadFileUseCase.UploadFileCommand uploadFileCommand = createUploadVideoCommand(uploadVideoRequest);
+        String videoId = uploadFileUseCase.upload(uploadFileCommand);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -65,25 +88,28 @@ public class VideoEndpoint {
                 .build();
     }
 
-    private UploadFileUseCase.UploadFileCommand createUploadImageCommand(UploadVideoRequest request) {
+    private UploadFileUseCase.UploadFileCommand createUploadVideoCommand(UploadVideoRequest request) {
         MultipartFile video = request.video();
 
-        byte[] videoAsBytes;
         try {
-            videoAsBytes = video.getBytes();
+            String fileExtension = FilenameUtils.getExtension(video.getOriginalFilename());
+            String contentType = video.getContentType() != null
+                    ? video.getContentType()
+                    : "application/octet-stream";
+
+            return new UploadFileUseCase.UploadFileCommand(
+                    video.getInputStream(),
+                    video.getSize(),
+                    fileExtension,
+                    contentType,
+                    FileType.VIDEO
+            );
         } catch (Exception e) {
-            //TODO: нужно как-то обработать
+            throw new FileUploadReadException(e);
         }
-
-        String fileExtension = FilenameUtils.getExtension(video.getOriginalFilename());
-
-        return new UploadFileUseCase.UploadFileCommand(
-                videoAsBytes,
-                fileExtension
-        );
     }
 
     private DeleteFileUseCase.DeleteFileCommand createDeleteVideoCommand(DeleteVideoRequest request) {
-        return new DeleteFileUseCase.DeleteFileCommand(request.videoId());
+        return new DeleteFileUseCase.DeleteFileCommand(request.videoId(), FileType.VIDEO);
     }
 }

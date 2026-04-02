@@ -1,5 +1,5 @@
 package com.rugid.multimediaservice.adapter.in.grpc;
-
+/*
 import com.rugid.account.ImageDeleteRequest;
 import com.rugid.account.ImageDeleteResponse;
 import com.rugid.account.MultimediaServiceGrpc;
@@ -32,3 +32,4 @@ public class ImageServiceGrpc extends MultimediaServiceGrpc.MultimediaServiceImp
         return new DeleteFileUseCase.DeleteFileCommand(imageId);
     }
 }
+*/

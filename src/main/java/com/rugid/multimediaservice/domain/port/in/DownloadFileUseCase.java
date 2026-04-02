@@ -1,10 +1,9 @@
 package com.rugid.multimediaservice.domain.port.in;
 
-import org.springframework.core.io.InputStreamResource;
-
-import java.net.URL;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 
 public interface DownloadFileUseCase {
 
-    InputStreamResource download(String fileId);
+    FileResource download(String fileId, FileType fileType);
 }

@@ -8,5 +8,5 @@ spring:
       uri: http://localhost:8880
       fail-fast: false
 rugid:
-  images:
-   folder-path: "content"
+  storage:
+    folder-path: "content"
