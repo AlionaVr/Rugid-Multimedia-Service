@@ -1,14 +1,16 @@
 package com.rugid.multimediaservice.adapter.in.rest.controller;
 
-import com.rugid.multimediaservice.adapter.in.exception.FileReadBytesException;
+import com.rugid.multimediaservice.domain.core.exception.FileUploadReadException;
 import com.rugid.multimediaservice.adapter.in.rest.dto.DeleteVideoRequest;
 import com.rugid.multimediaservice.adapter.in.rest.dto.RetrieveDefaultVideoIdResponse;
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadVideoRequest;
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadVideoResponse;
 import com.rugid.multimediaservice.adapter.in.rest.validator.JsonDtoValidator;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 import com.rugid.multimediaservice.domain.port.in.*;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -53,16 +55,16 @@ public class VideoEndpoint {
     }
 
     @GetMapping
-    public ResponseEntity<InputStreamResource> downloadVideo(@RequestParam(name = "videoId") String videoId) {
-        InputStreamResource video = downloadFileUseCase.download(videoId);
+    public ResponseEntity<Resource> downloadVideo(@RequestParam(name = "videoId") String videoId) {
+        FileResource video = downloadFileUseCase.download(videoId, FileType.VIDEO);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentType(MediaType.parseMediaType(video.contentType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + videoId + "\"")
-                .body(video);
+                .body(video.resource());
     }
 
-    @PutMapping(consumes = "multipart/form-data")
+    @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<UploadVideoResponse> uploadVideo(@ModelAttribute("request") UploadVideoRequest uploadVideoRequest) {
         uploadVideoRequestValidator.validate(uploadVideoRequest);
 
@@ -89,23 +91,25 @@ public class VideoEndpoint {
     private UploadFileUseCase.UploadFileCommand createUploadVideoCommand(UploadVideoRequest request) {
         MultipartFile video = request.video();
 
-        byte[] videoAsBytes;
         try {
-            videoAsBytes = video.getBytes();
+            String fileExtension = FilenameUtils.getExtension(video.getOriginalFilename());
+            String contentType = video.getContentType() != null
+                    ? video.getContentType()
+                    : "application/octet-stream";
+
+            return new UploadFileUseCase.UploadFileCommand(
+                    video.getInputStream(),
+                    video.getSize(),
+                    fileExtension,
+                    contentType,
+                    FileType.VIDEO
+            );
         } catch (Exception e) {
-            throw new FileReadBytesException();
+            throw new FileUploadReadException(e);
         }
-
-        String fileExtension = FilenameUtils.getExtension(video.getOriginalFilename());
-
-        return new UploadFileUseCase.UploadFileCommand(
-                videoAsBytes,
-                fileExtension,
-                FileType.VIDEO
-        );
     }
 
     private DeleteFileUseCase.DeleteFileCommand createDeleteVideoCommand(DeleteVideoRequest request) {
-        return new DeleteFileUseCase.DeleteFileCommand(request.videoId());
+        return new DeleteFileUseCase.DeleteFileCommand(request.videoId(), FileType.VIDEO);
     }
 }

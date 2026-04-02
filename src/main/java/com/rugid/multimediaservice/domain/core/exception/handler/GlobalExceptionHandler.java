@@ -1,6 +1,11 @@
-package com.rugid.multimediaservice.adapter.in.exception.handler;
+package com.rugid.multimediaservice.domain.core.exception.handler;
 
-import com.rugid.multimediaservice.adapter.in.exception.*;
+import com.rugid.multimediaservice.domain.core.exception.DtoNotValidException;
+import com.rugid.multimediaservice.domain.core.exception.FileDeleteException;
+import com.rugid.multimediaservice.domain.core.exception.FileNotFoundException;
+import com.rugid.multimediaservice.domain.core.exception.FileReadException;
+import com.rugid.multimediaservice.domain.core.exception.FileSaveException;
+import com.rugid.multimediaservice.domain.core.exception.FileUploadReadException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,14 +33,24 @@ public class GlobalExceptionHandler {
         return createResponse("File Delete Error", exception, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @ExceptionHandler(FileReadBytesException.class)
-    public ResponseEntity<?> handleFileReadBytesException(FileReadBytesException exception) {
-        return createResponse("File Read Error", exception, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(FileUploadReadException.class)
+    public ResponseEntity<?> handleFileUploadReadException(FileUploadReadException exception) {
+        return createResponse("File Upload Error", exception, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(FileReadException.class)
+    public ResponseEntity<?> handleFileReadException(FileReadException exception) {
+        return createResponse("File Read Error", exception, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<?> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException exception) {
         return createResponse("File Size Exceeded", exception, HttpStatus.PAYLOAD_TOO_LARGE);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException exception) {
+        return createResponse("Invalid Argument", exception, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(DtoNotValidException.class)

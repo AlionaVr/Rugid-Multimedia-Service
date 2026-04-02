@@ -1,14 +1,15 @@
 package com.rugid.multimediaservice.adapter.in.rest.controller;
 
-import com.rugid.multimediaservice.adapter.in.exception.FileReadBytesException;
+import com.rugid.multimediaservice.domain.core.exception.FileUploadReadException;
 import com.rugid.multimediaservice.adapter.in.rest.dto.DeleteImageRequest;
 import com.rugid.multimediaservice.adapter.in.rest.dto.RetrieveDefaultImageIdResponse;
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadImageRequest;
 import com.rugid.multimediaservice.adapter.in.rest.dto.UploadImageResponse;
 import com.rugid.multimediaservice.adapter.in.rest.validator.JsonDtoValidator;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 import com.rugid.multimediaservice.domain.port.in.*;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -45,12 +46,12 @@ public class ImageEndpoint {
 
     @GetMapping
     public ResponseEntity<Resource> downloadImage(@RequestParam(name = "imageId") String imageId) {
-        InputStreamResource image = downloadFileUseCase.download(imageId);
+        FileResource fileResource = downloadFileUseCase.download(imageId, FileType.IMAGE);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .contentType(MediaType.valueOf("image/png"))
-                .body(image);
+                .contentType(MediaType.parseMediaType(fileResource.contentType()))
+                .body(fileResource.resource());
     }
 
     @GetMapping("/default")
@@ -62,7 +63,7 @@ public class ImageEndpoint {
                 .body(new RetrieveDefaultImageIdResponse(defaultImageId));
     }
 
-    @PutMapping(consumes = "multipart/form-data")
+    @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<UploadImageResponse> uploadImage(@ModelAttribute("request") UploadImageRequest request) {
         uploadImageRequestValidator.validate(request);
 
@@ -89,23 +90,25 @@ public class ImageEndpoint {
     private UploadFileUseCase.UploadFileCommand createUploadImageCommand(UploadImageRequest request) {
         MultipartFile image = request.image();
 
-        byte[] imageAsBytes;
         try {
-            imageAsBytes = image.getBytes();
+            String fileExtension = FilenameUtils.getExtension(image.getOriginalFilename());
+            String contentType = image.getContentType() != null
+                    ? image.getContentType()
+                    : "application/octet-stream";
+
+            return new UploadFileUseCase.UploadFileCommand(
+                    image.getInputStream(),
+                    image.getSize(),
+                    fileExtension,
+                    contentType,
+                    FileType.IMAGE
+            );
         } catch (Exception e) {
-            throw new FileReadBytesException();
+            throw new FileUploadReadException(e);
         }
-
-        String fileExtension = FilenameUtils.getExtension(image.getOriginalFilename());
-
-        return new UploadFileUseCase.UploadFileCommand(
-                imageAsBytes,
-                fileExtension,
-                FileType.IMAGE
-        );
     }
 
     private DeleteFileUseCase.DeleteFileCommand createDeleteImageCommand(DeleteImageRequest request) {
-        return new DeleteFileUseCase.DeleteFileCommand(request.imageId());
+        return new DeleteFileUseCase.DeleteFileCommand(request.imageId(), FileType.IMAGE);
     }
 }

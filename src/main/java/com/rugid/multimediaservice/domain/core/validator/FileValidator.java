@@ -1,4 +1,4 @@
-package com.rugid.multimediaservice.adapter.in.rest.validator;
+package com.rugid.multimediaservice.domain.core.validator;
 
 import org.springframework.stereotype.Component;
 
@@ -13,32 +13,32 @@ public class FileValidator {
     private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024;
     private static final long MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
-    public void validateImage(byte[] data, String extension) {
-        validateCommon(data, extension);
+    public void validateImage(long size, String extension) {
+        validateCommon(size, extension);
 
         if (!IMAGE_EXTENSIONS.contains(extension.toLowerCase())) {
             throw new IllegalArgumentException("Unsupported image extension: " + extension);
         }
 
-        if (data.length > MAX_IMAGE_SIZE) {
+        if (size > MAX_IMAGE_SIZE) {
             throw new IllegalArgumentException("Image too large");
         }
     }
 
-    public void validateVideo(byte[] data, String extension) {
-        validateCommon(data, extension);
+    public void validateVideo(long size, String extension) {
+        validateCommon(size, extension);
 
         if (!VIDEO_EXTENSIONS.contains(extension.toLowerCase())) {
             throw new IllegalArgumentException("Unsupported video extension: " + extension);
         }
 
-        if (data.length > MAX_VIDEO_SIZE) {
+        if (size > MAX_VIDEO_SIZE) {
             throw new IllegalArgumentException("Video too large");
         }
     }
 
-    private void validateCommon(byte[] data, String extension) {
-        if (data == null || data.length == 0) {
+    private void validateCommon(long size, String extension) {
+        if (size <= 0) {
             throw new IllegalArgumentException("File is empty");
         }
 

@@ -1,4 +1,4 @@
-package com.rugid.multimediaservice.adapter.in.exception;
+package com.rugid.multimediaservice.domain.core.exception;
 
 public class FileSaveException extends RuntimeException {
     public FileSaveException(String filename, Throwable cause) {

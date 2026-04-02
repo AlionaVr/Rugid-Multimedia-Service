@@ -1,7 +1,10 @@
-package com.rugid.multimediaservice.adapter.in.exception;
+package com.rugid.multimediaservice.domain.core.exception;
+
+import lombok.Getter;
 
 import java.util.Set;
 
+@Getter
 public class DtoNotValidException extends RuntimeException {
 
     private final Set<String> errorMessages;
@@ -10,7 +13,4 @@ public class DtoNotValidException extends RuntimeException {
         this.errorMessages = errorMessages;
     }
 
-    public Set<String> getErrorMessages() {
-        return errorMessages;
-    }
 }

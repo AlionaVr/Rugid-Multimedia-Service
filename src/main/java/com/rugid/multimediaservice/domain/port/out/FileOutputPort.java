@@ -1,14 +1,15 @@
 package com.rugid.multimediaservice.domain.port.out;
 
-import org.springframework.core.io.InputStreamResource;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 
-import java.net.URL;
+import java.io.InputStream;
 
 public interface FileOutputPort {
 
-    String upload(byte[] data, String extension);
+    String upload(InputStream inputStream, String extension, String contentType, FileType fileType);
 
-    InputStreamResource download(String fileId);
+    FileResource download(String fileId, FileType fileType);
 
-    void delete(String imageId);
+    void delete(String imageId, FileType fileType);
 }

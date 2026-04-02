@@ -1,18 +1,18 @@
 package com.rugid.multimediaservice.adapter.out.persistence;
 
-import com.rugid.multimediaservice.adapter.in.exception.FileNotFoundException;
-import com.rugid.multimediaservice.adapter.in.rest.validator.FileValidator;
+import com.rugid.multimediaservice.domain.core.exception.FileNotFoundException;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.core.io.InputStreamResource;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 class SystemFileStorageAdapterTest {
 
@@ -23,8 +23,7 @@ class SystemFileStorageAdapterTest {
 
     @BeforeEach
     void setUp() {
-        FileValidator fileValidator = mock(FileValidator.class);
-        adapter = new SystemFileStorageAdapter(tempDir.toString(), fileValidator);
+        adapter = new SystemFileStorageAdapter(tempDir.toString());
         adapter.init();
     }
 
@@ -32,9 +31,9 @@ class SystemFileStorageAdapterTest {
     void upload_shouldSaveFile_andReturnFileId() throws IOException {
         byte[] data = "hello".getBytes();
 
-        String fileId = adapter.upload(data, "txt");
+        String fileId = adapter.upload(new ByteArrayInputStream(data), "txt", "text/plain", FileType.IMAGE);
 
-        Path savedFile = tempDir.resolve(fileId);
+        Path savedFile = tempDir.resolve(FileType.IMAGE.getFolderName()).resolve(fileId);
 
         assertTrue(Files.exists(savedFile));
         assertArrayEquals(data, Files.readAllBytes(savedFile));
@@ -43,11 +42,11 @@ class SystemFileStorageAdapterTest {
     @Test
     void download_shouldReturnFileContent() throws IOException {
         byte[] data = "test-data".getBytes();
-        String fileId = adapter.upload(data, "txt");
+        String fileId = adapter.upload(new ByteArrayInputStream(data), "txt", "text/plain", FileType.IMAGE);
 
-        InputStreamResource resource = adapter.download(fileId);
+        FileResource resource = adapter.download(fileId, FileType.IMAGE);
 
-        byte[] result = resource.getInputStream().readAllBytes();
+        byte[] result = resource.resource().getInputStream().readAllBytes();
 
         assertArrayEquals(data, result);
     }
@@ -55,22 +54,22 @@ class SystemFileStorageAdapterTest {
     @Test
     void download_shouldThrow_whenFileNotFound() {
         assertThrows(FileNotFoundException.class,
-                () -> adapter.download("non-existent.txt"));
+                () -> adapter.download("non-existent.txt", FileType.IMAGE));
     }
 
     @Test
-    void delete_shouldRemoveFile() throws IOException {
+    void delete_shouldRemoveFile() {
         byte[] data = "delete-me".getBytes();
-        String fileId = adapter.upload(data, "txt");
+        String fileId = adapter.upload(new ByteArrayInputStream(data), "txt", "text/plain", FileType.IMAGE);
 
-        adapter.delete(fileId);
+        adapter.delete(fileId, FileType.IMAGE);
 
-        assertFalse(Files.exists(tempDir.resolve(fileId)));
+        assertFalse(Files.exists(tempDir.resolve(FileType.IMAGE.getFolderName()).resolve(fileId)));
     }
 
     @Test
     void delete_shouldThrow_whenFileNotFound() {
         assertThrows(FileNotFoundException.class,
-                () -> adapter.delete("missing.txt"));
+                () -> adapter.delete("missing.txt", FileType.IMAGE));
     }
 }

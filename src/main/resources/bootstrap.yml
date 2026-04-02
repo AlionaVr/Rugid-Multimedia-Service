@@ -8,6 +8,5 @@ spring:
       uri: http://localhost:8880
       fail-fast: false
 rugid:
-  images:
+  storage:
     folder-path: "content"
-    max-file-size: 10485760  #10MB

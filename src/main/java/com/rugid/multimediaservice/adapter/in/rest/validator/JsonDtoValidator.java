@@ -1,6 +1,6 @@
 package com.rugid.multimediaservice.adapter.in.rest.validator;
 
-import com.rugid.multimediaservice.adapter.in.exception.DtoNotValidException;
+import com.rugid.multimediaservice.domain.core.exception.DtoNotValidException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Component;

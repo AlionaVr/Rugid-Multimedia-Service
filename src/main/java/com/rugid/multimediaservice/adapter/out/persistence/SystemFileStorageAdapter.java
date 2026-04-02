@@ -1,114 +1,129 @@
 package com.rugid.multimediaservice.adapter.out.persistence;
 
-import com.rugid.multimediaservice.adapter.in.exception.FileDeleteException;
-import com.rugid.multimediaservice.adapter.in.exception.FileNotFoundException;
-import com.rugid.multimediaservice.adapter.in.exception.FileReadBytesException;
-import com.rugid.multimediaservice.adapter.in.exception.FileSaveException;
-import com.rugid.multimediaservice.adapter.in.rest.validator.FileValidator;
+import com.rugid.multimediaservice.domain.core.exception.FileDeleteException;
+import com.rugid.multimediaservice.domain.core.exception.FileNotFoundException;
+import com.rugid.multimediaservice.domain.core.exception.FileSaveException;
+import com.rugid.multimediaservice.domain.core.model.FileResource;
+import com.rugid.multimediaservice.domain.core.model.FileType;
 import com.rugid.multimediaservice.domain.port.out.FileOutputPort;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.DigestUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.UUID;
 
 @Component
 public class SystemFileStorageAdapter implements FileOutputPort {
 
     private final Path storageFolder;
-    private final FileValidator fileValidator;
 
-    public SystemFileStorageAdapter(@Value("${rugid.images.folder-path}") String storageFolder, FileValidator fileValidator) {
+    public SystemFileStorageAdapter(@Value("${rugid.storage.folder-path}") String storageFolder) {
         this.storageFolder = Path.of(storageFolder);
-        this.fileValidator = fileValidator;
     }
 
     @PostConstruct
     public void init() {
         try {
-            if (!Files.exists(storageFolder)) {
-                Files.createDirectories(storageFolder);
+            for (FileType fileType : FileType.values()) {
+                Files.createDirectories(storageFolder.resolve(fileType.getFolderName()));
             }
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to initialize storage folder", e);
+            throw new IllegalStateException("Failed to initialize storage folders", e);
         }
     }
 
     @Override
-    public String upload(byte[] data, String extension) {
-        String filename = generateFilename(data);
-        Path filePath = storageFolder.resolve(generateFilePath(filename, extension));
-
-        trySaveFile(filePath, data);
-        return generateFileId(filePath);
-
+    public String upload(InputStream inputStream, String extension, String contentType, FileType fileType) {
+        String filename = UUID.randomUUID() + "." + extension;
+        Path filePath = subfolderFor(fileType).resolve(filename);
+        trySaveFile(filePath, inputStream);
+        saveMeta(filePath, contentType);
+        return filename;
     }
 
     @Override
-    public InputStreamResource download(String fileId) {
-        Path filePath = storageFolder.resolve(fileId);
-        byte[] fileData = getFileData(filePath);
-        return new InputStreamResource(new ByteArrayInputStream(fileData));
+    public FileResource download(String fileId, FileType fileType) {
+        Path filePath = resolveAndValidatePath(fileId, fileType);
+        ensureExists(filePath);
+        return new FileResource(new FileSystemResource(filePath), readMeta(filePath));
     }
 
     @Override
-    public void delete(String fileId) {
-        Path filePath = storageFolder.resolve(fileId);
+    public void delete(String fileId, FileType fileType) {
+        Path filePath = resolveAndValidatePath(fileId, fileType);
         tryDeleteFile(filePath, fileId);
     }
 
-    private byte[] getFileData(Path filePath) {
+    private Path subfolderFor(FileType fileType) {
+        return storageFolder.resolve(fileType.getFolderName());
+    }
+
+    private void saveMeta(Path filePath, String contentType) {
+        Path metaPath = generateMetaPath(filePath);
         try {
-            if (!Files.exists(filePath)) {
-                throw new FileNotFoundException();
-            }
-            return Files.readAllBytes(filePath);
+            Files.writeString(metaPath, contentType,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
         } catch (IOException e) {
-            throw new FileReadBytesException();
+            throw new FileSaveException(metaPath.getFileName().toString(), e);
         }
     }
 
-
-    private void trySaveFile(Path filePath, byte[] data) {
+    private String readMeta(Path filePath) {
         try {
-            Files.write(filePath, data,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING);
+            return Files.readString(generateMetaPath(filePath));
+        } catch (IOException e) {
+            return "application/octet-stream";
+        }
+    }
+
+    private Path generateMetaPath(Path filePath) {
+        return Path.of(filePath + ".meta");
+    }
+
+    private void trySaveFile(Path filePath, InputStream inputStream) {
+        try {
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new FileSaveException(filePath.getFileName().toString(), e);
         }
     }
 
     private void tryDeleteFile(Path filePath, String fileId) {
+        ensureExists(filePath);
         try {
-            if (!Files.exists(filePath)) {
-                throw new FileNotFoundException();
-            }
+            Files.deleteIfExists(generateMetaPath(filePath));
             Files.delete(filePath);
         } catch (IOException e) {
             throw new FileDeleteException(fileId, e);
         }
     }
 
-    private String generateFileId(Path filename) {
-        return filename.getFileName().toString();
+    private void ensureExists(Path filePath) {
+        if (!Files.exists(filePath)) {
+            throw new FileNotFoundException();
+        }
     }
 
-    private Path generateFilePath(String filename, String extension) {
-        return Path.of(filename + "." + extension);
-    }
+    private Path resolveAndValidatePath(String fileId, FileType fileType) {
+        if (fileId == null || fileId.isBlank()) {
+            throw new IllegalArgumentException("Invalid fileId");
+        }
 
-    private String generateFilename(byte[] fileData) {
-        return generateFileHash(fileData);
-    }
+        Path subfolder = subfolderFor(fileType);
+        Path resolved = subfolder.resolve(fileId).normalize();
 
-    private String generateFileHash(byte[] file) {
-        return DigestUtils.md5DigestAsHex(file);
+        if (!resolved.startsWith(subfolder)) {
+            throw new IllegalArgumentException("Path traversal attempt");
+        }
+
+        return resolved;
     }
 }
